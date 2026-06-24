@@ -16,6 +16,7 @@ import (
 type apiConfig struct {
 	fileserverHits atomic.Int32
     dbQueries *database.Queries
+    platform string
 }
 
 func main() {
@@ -24,13 +25,26 @@ func main() {
 
     godotenv.Load()
     dbURL := os.Getenv("DB_URL")
+    if dbURL == "" {
+		log.Fatal("DB_URL must be set")
+	}
+
+    platform := os.Getenv("PLATFORM")
+    if platform == "" {
+		log.Fatal("PLATFORM must be set")
+	}
+
     db, err := sql.Open("postgres", dbURL)
     if err != nil {
 	    log.Fatalf("Database connection failed: %v\n", err)
     }
     dbQueries := database.New(db)
 
-	apiCfg := apiConfig{dbQueries: dbQueries}
+
+	apiCfg := apiConfig{
+        dbQueries: dbQueries,
+        platform: platform,
+    }
 	mux := http.NewServeMux()
 
 	// The /app/ prefix is stripped so the file server can look up files
@@ -40,6 +54,8 @@ func main() {
 
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
 	mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
+    
+	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)
 	mux.HandleFunc("POST /admin/reset", apiCfg.handlerReset)
