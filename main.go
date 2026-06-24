@@ -1,50 +1,49 @@
 package main
 
 import (
-    "os"
+	"database/sql"
+	"github.com/joho/godotenv"
+	"github.com/jovinjoseph/chirpy-server/internal/database"
+	_ "github.com/lib/pq"
 	"log"
 	"net/http"
+	"os"
 	"sync/atomic"
-    "database/sql"
-    _ "github.com/lib/pq"
-    "github.com/joho/godotenv"
-    "github.com/jovinjoseph/chirpy-server/internal/database"
 )
 
 // apiConfig tracks stateful data across HTTP handlers.
 // It is intended to be initialized once and shared between routes.
 type apiConfig struct {
 	fileserverHits atomic.Int32
-    dbQueries *database.Queries
-    platform string
+	dbQueries      *database.Queries
+	platform       string
 }
 
 func main() {
 	const filepathRoot = "."
 	const port = "8080"
 
-    godotenv.Load()
-    dbURL := os.Getenv("DB_URL")
-    if dbURL == "" {
+	godotenv.Load()
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
 		log.Fatal("DB_URL must be set")
 	}
 
-    platform := os.Getenv("PLATFORM")
-    if platform == "" {
+	platform := os.Getenv("PLATFORM")
+	if platform == "" {
 		log.Fatal("PLATFORM must be set")
 	}
 
-    db, err := sql.Open("postgres", dbURL)
-    if err != nil {
-	    log.Fatalf("Database connection failed: %v\n", err)
-    }
-    dbQueries := database.New(db)
-
+	db, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("Database connection failed: %v\n", err)
+	}
+	dbQueries := database.New(db)
 
 	apiCfg := apiConfig{
-        dbQueries: dbQueries,
-        platform: platform,
-    }
+		dbQueries: dbQueries,
+		platform:  platform,
+	}
 	mux := http.NewServeMux()
 
 	// The /app/ prefix is stripped so the file server can look up files
@@ -53,8 +52,8 @@ func main() {
 	mux.Handle("/app/", apiCfg.middlewareMetricsInc(handler))
 
 	mux.HandleFunc("GET /api/healthz", handlerReadiness)
-	mux.HandleFunc("POST /api/validate_chirp", handlerValidateChirp)
-    
+
+	mux.HandleFunc("POST /api/chirps", apiCfg.handlerChirpsCreate)
 	mux.HandleFunc("POST /api/users", apiCfg.handlerCreateUser)
 
 	mux.HandleFunc("GET /admin/metrics", apiCfg.handlerMetrics)

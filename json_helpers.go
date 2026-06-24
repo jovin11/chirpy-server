@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"net/http"
 	"log"
+	"net/http"
 )
 
 func respondWithError(w http.ResponseWriter, code int, msg string, err error) {
@@ -30,5 +30,5 @@ func respondWithJSON(w http.ResponseWriter, code int, params interface{}) {
 		return
 	}
 	w.WriteHeader(code)
-    w.Write(json_body)
+	w.Write(json_body)
 }
