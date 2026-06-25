@@ -1,2 +1,3 @@
 # chirpy-server
-An exploration of building high-performance web servers in Go, focusing on routing, middleware, and leveraging goroutines for concurrency
+
+An exploration of building high-performance, RESTful web servers in Go. This project focuses on resource-based routing, middleware, and leveraging Go's concurrency model to build scalable, standardized APIs.
