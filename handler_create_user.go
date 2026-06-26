@@ -1,21 +1,25 @@
 package main
 
 import (
+	"time"
+	"net/http"
 	"encoding/json"
 	"github.com/google/uuid"
-	"net/http"
-	"time"
+	"github.com/jovinjoseph/chirpy-server/internal/auth"
+	"github.com/jovinjoseph/chirpy-server/internal/database"
 )
+
+type UserResponse struct {
+	ID        uuid.UUID `json:"id"`
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
+	Email     string    `json:"email"`
+}
 
 func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) {
 	type requestParams struct {
 		Email string `json:"email"`
-	}
-	type UserResponse struct {
-		ID        uuid.UUID `json:"id"`
-		CreatedAt time.Time `json:"created_at"`
-		UpdatedAt time.Time `json:"updated_at"`
-		Email     string    `json:"email"`
+		Password string `json:"password"`
 	}
 
 	var params requestParams
@@ -25,8 +29,17 @@ func (cfg *apiConfig) handlerCreateUser(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
+	passwordHash, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to hash password", err)
+		return
+	}
+
 	// call cfg.db.CreateUser(...)
-	user, err := cfg.dbQueries.CreateUser(r.Context(), params.Email)
+	user, err := cfg.dbQueries.CreateUser(r.Context(), database.CreateUserParams{
+		Email:          params.Email,
+		HashedPassword: passwordHash,
+	})
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Failed to create user", err)
 		return
