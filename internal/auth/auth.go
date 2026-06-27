@@ -1,12 +1,14 @@
 package auth
 
 import (
-	"fmt"
 	"errors"
-	"time"
-	"github.com/google/uuid"
-	"github.com/golang-jwt/jwt/v5"
+	"fmt"
 	"github.com/alexedwards/argon2id"
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
+	"net/http"
+	"strings"
+	"time"
 )
 
 type TokenType string
@@ -33,8 +35,8 @@ func CheckPasswordHash(password, hash string) (bool, error) {
 }
 
 func MakeJWT(
-	userID uuid.UUID, 
-	tokenSecret string, 
+	userID uuid.UUID,
+	tokenSecret string,
 	expiresIn time.Duration,
 ) (string, error) {
 	signingKey := []byte(tokenSecret)
@@ -57,7 +59,7 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 	if err != nil {
 		return uuid.Nil, err
 	}
-	
+
 	userIDString, err := token.Claims.GetSubject()
 	if err != nil {
 		return uuid.Nil, err
@@ -76,4 +78,21 @@ func ValidateJWT(tokenString, tokenSecret string) (uuid.UUID, error) {
 		return uuid.Nil, fmt.Errorf("invalid user ID: %w", err)
 	}
 	return id, nil
+}
+
+func GetBearerToken(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return "", errors.New("Authorization header not found")
+	}
+
+	parts := strings.SplitN(authHeader, " ", 2)
+	for i := range parts {
+		parts[i] = strings.TrimSpace(parts[i])
+	}
+	if len(parts) != 2 || parts[0] != "Bearer" {
+		return "", errors.New("Invalid Authorization header format")
+	}
+
+	return parts[1], nil
 }
