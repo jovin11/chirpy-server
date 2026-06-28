@@ -7,23 +7,10 @@ import (
 	"net/http"
 )
 
-func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) {
+func (cfg *apiConfig) handlerUpdateUsers(w http.ResponseWriter, r *http.Request) {
 	type requestParams struct {
 		Email    string `json:"email"`
 		Password string `json:"password"`
-	}
-
-	params := requestParams{}
-	err := json.NewDecoder(r.Body).Decode(&params)
-	if err != nil {
-		respondWithError(w, http.StatusBadRequest, "Failed to decode parameters", err)
-		return
-	}
-
-	passwordHash, err := auth.HashPassword(params.Password)
-	if err != nil {
-		respondWithError(w, http.StatusInternalServerError, "Failed to hash password", err)
-		return
 	}
 
 	token, err := auth.GetBearerToken(r.Header)
@@ -35,6 +22,20 @@ func (cfg *apiConfig) handlerUpdateUser(w http.ResponseWriter, r *http.Request) 
 	userID, err := auth.ValidateJWT(token, cfg.jwtSecret)
 	if err != nil {
 		respondWithError(w, http.StatusUnauthorized, "Invalid token", err)
+		return
+
+	}
+
+	params := requestParams{}
+	err = json.NewDecoder(r.Body).Decode(&params)
+	if err != nil {
+		respondWithError(w, http.StatusBadRequest, "Failed to decode parameters", err)
+		return
+	}
+
+	passwordHash, err := auth.HashPassword(params.Password)
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to hash password", err)
 		return
 	}
 
