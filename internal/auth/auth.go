@@ -1,6 +1,8 @@
 package auth
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"errors"
 	"fmt"
 	"github.com/alexedwards/argon2id"
@@ -95,4 +97,10 @@ func GetBearerToken(headers http.Header) (string, error) {
 	}
 
 	return parts[1], nil
+}
+
+func MakeRefreshToken() string {
+	refreshToken := make([]byte, 32)
+	rand.Read(refreshToken)
+	return hex.EncodeToString(refreshToken)
 }
