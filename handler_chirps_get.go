@@ -1,10 +1,10 @@
 package main
 
 import (
-	"net/http"
-
 	"github.com/google/uuid"
 	"github.com/jovinjoseph/chirpy-server/internal/database"
+	"net/http"
+	"sort"
 )
 
 func (cfg *apiConfig) handlerChirpsGetByID(w http.ResponseWriter, r *http.Request) {
@@ -66,6 +66,18 @@ func (cfg *apiConfig) handlerChirpsGet(w http.ResponseWriter, r *http.Request) {
 			UserID:    dbChirp.UserID,
 		}
 		chirps = append(chirps, chirp)
+	}
+
+	order := r.URL.Query().Get("sort")
+
+	if order == "asc" {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].CreatedAt.Before(chirps[j].CreatedAt)
+		})
+	} else {
+		sort.Slice(chirps, func(i, j int) bool {
+			return chirps[i].CreatedAt.After(chirps[j].CreatedAt)
+		})
 	}
 	respondWithJSON(w, http.StatusOK, chirps)
 
