@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"github.com/google/uuid"
+	"github.com/jovinjoseph/chirpy-server/internal/auth"
 	"net/http"
 )
 
@@ -24,6 +25,16 @@ func (cfg *apiConfig) handlerWebhook(w http.ResponseWriter, r *http.Request) {
 
 	if params.Event != "user.upgraded" {
 		w.WriteHeader(http.StatusNoContent)
+		return
+	}
+
+	polkaKey, err := auth.GetAPIKey(r.Header)
+	if err != nil {
+		respondWithError(w, http.StatusUnauthorized, "Invalid API key", err)
+		return
+	}
+	if polkaKey != cfg.polkaKey {
+		respondWithError(w, http.StatusUnauthorized, "Invalid API key", err)
 		return
 	}
 
