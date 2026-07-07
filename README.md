@@ -1,4 +1,5 @@
 # Chirpy Server
+![Chirpy Logo](assets/logo.png)
 
 Chirpy is a RESTful microblogging API built with Go and PostgreSQL. It supports user accounts, secure authentication, short-form posts ("chirps"), author-based filtering, chronological sorting, and an authenticated webhook for account upgrades.
 
